@@ -6,12 +6,12 @@ import (
 	"sort"
 )
 
-// Assuming no collinear points
 type Point struct {
 	x float64
 	y float64
 }
 
+// Move Stack and Point delcarations
 type Stack struct {
 	stack []Point
 }
