@@ -15,6 +15,22 @@ type AVLTree[T any] struct {
 	Comparator Comparator[T]
 }
 
+func getHeight[T any](node *Node[T]) int {
+	if node == nil {
+		return 0
+	}
+
+	return node.Height
+}
+
+func getBalance[T any](node *Node[T]) int {
+	if node == nil {
+		return 0
+	}
+
+	return getHeight(node.Left) - getHeight(node.Right)
+}
+
 func NewAVL[T any](cmp func(a, b T) int) *AVLTree[T] {
 	avl := AVLTree[T]{Comparator: cmp}
 	return &avl
@@ -43,36 +59,46 @@ func SearchTree[T any](tree *AVLTree[T], val T) bool {
 	return false
 }
 
-func Insert[T any](tree *AVLTree[T], val T) {
-	newNode := &Node[T]{val, 0, 0, nil, nil}
+func Insert[T any](node *Node[T], cmp Comparator[T], val T) *Node[T] {
 
-	if tree == nil {
-		tree.Root = newNode
-		return
+	if node == nil {
+		return &Node[T]{val, 1, 0, nil, nil}
 	}
 
-	currNode := tree.Root
-	parent := currNode
+	difference := cmp(node.Value, val)
 
-	for currNode != nil {
-		parent = currNode
-		difference := tree.Comparator(currNode.Value, val)
-
-		if difference > 0 {
-			currNode = currNode.Right
-		} else {
-			currNode = currNode.Left
-		}
+	if difference > 0 {
+		node.Left = Insert(node.Left, cmp, val)
+	} else if difference < 0 {
+		node.Right = Insert(node.Right, cmp, val)
 	}
 
-	newNode.Height = parent.Height + 1
+	node.Height = 1 + max(getHeight(node.Left), getHeight(node.Right))
+	node.Balance = getBalance(node)
 
-	if tree.Comparator(parent.Value, val) > 0 {
-		parent.Left = newNode
-	} else {
-		parent.Right = newNode
+	// Inserted into left child of left-subtree where left child may have had right child to begin with, or not
+	if (node.Balance > 1) && (getBalance(node.Left) >= 0) {
+		return rotateRight(node)
 	}
 
-	parent.Balance = parent.Left.Height - parent.Right.Height
-	return
+	//Inserted into right child of right-subtree where right child may have had left child thus balance may equal 0
+	if (node.Balance < -1) && (getBalance(node.Right) <= 0) {
+		return rotateLeft(node)
+	}
+
+	return nil
+}
+
+func rotateRight[T any](node *Node[T]) *Node[T] {
+	tmp := node.Left
+	node.Left = tmp.Right
+	tmp.Right = node
+	return tmp
+}
+
+func rotateLeft[T any](node *Node[T]) *Node[T] {
+	tmp := node.Right
+	node.Right = tmp.Left
+	tmp.Left = node
+	return tmp
 }
