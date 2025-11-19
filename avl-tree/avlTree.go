@@ -1,5 +1,7 @@
 package avl
 
+import "fmt"
+
 type Comparator[T any] func(a, b T) int
 
 type Node[T any] struct {
@@ -86,7 +88,18 @@ func Insert[T any](node *Node[T], cmp Comparator[T], val T) *Node[T] {
 		return rotateLeft(node)
 	}
 
-	return nil
+	//Inserted into left child of right subtree
+	if (node.Balance < -1) && (getBalance(node.Right) > 0) {
+		node.Right = rotateRight(node.Right)
+		return rotateLeft(node)
+	}
+
+	if (node.Balance > 1) && (getBalance(node.Left) < 0) {
+		node.Left = rotateLeft(node.Left)
+		return rotateRight(node)
+	}
+
+	return node
 }
 
 func rotateRight[T any](node *Node[T]) *Node[T] {
@@ -101,4 +114,43 @@ func rotateLeft[T any](node *Node[T]) *Node[T] {
 	node.Right = tmp.Left
 	tmp.Left = node
 	return tmp
+}
+
+// PrintGraphical prints the tree in a normal top-down tree structure.
+func (t *AVLTree[T]) PrintGraphical() {
+	if t.Root == nil {
+		println("(empty)")
+		return
+	}
+	printGraphicalNode(t.Root, "", true)
+}
+
+func printGraphicalNode[T any](node *Node[T], prefix string, isTail bool) {
+	if node.Right != nil {
+		newPrefix := prefix
+		if isTail {
+			newPrefix += "│   "
+		} else {
+			newPrefix += "    "
+		}
+		printGraphicalNode(node.Right, newPrefix, false)
+	}
+
+	// Visual connectors
+	connector := "└── "
+	if !isTail {
+		connector = "┌── "
+	}
+
+	println(prefix + connector + fmt.Sprintf("%v (h=%d,b=%d)", node.Value, node.Height, node.Balance))
+
+	if node.Left != nil {
+		newPrefix := prefix
+		if isTail {
+			newPrefix += "    "
+		} else {
+			newPrefix += "│   "
+		}
+		printGraphicalNode(node.Left, newPrefix, true)
+	}
 }
