@@ -102,6 +102,48 @@ func Insert[T any](node *Node[T], cmp Comparator[T], val T) *Node[T] {
 	return node
 }
 
+func Delete[T any](node *Node[T], cmp Comparator[T], val T) *Node[T] {
+
+	if node == nil {
+		return nil
+	}
+
+	difference := cmp(node.Value, val)
+
+	if difference == 0 {
+		return nil
+	}
+
+	if difference > 0 {
+		node.Left = Delete(node.Left, cmp, val)
+	} else if difference < 0 {
+		node.Right = Delete(node.Right, cmp, val)
+	}
+
+	node.Height = 1 + max(getHeight(node.Right), getHeight(node.Left))
+	node.Balance = getBalance(node)
+
+	if (node.Balance > 1) && (getBalance(node.Left) >= 0) {
+		return rotateRight(node)
+	}
+
+	if (node.Balance < -1) && (getBalance(node.Right) <= 0) {
+		return rotateLeft(node)
+	}
+
+	if (node.Balance < -1) && (getBalance(node.Right) > 0) {
+		node.Right = rotateRight(node.Right)
+		return rotateLeft(node)
+	}
+
+	if (node.Balance > 1) && (getBalance(node.Left) < 0) {
+		node.Left = rotateLeft(node.Left)
+		return rotateRight(node)
+	}
+
+	return node
+}
+
 func rotateRight[T any](node *Node[T]) *Node[T] {
 	tmp := node.Left
 	node.Left = tmp.Right
@@ -136,7 +178,6 @@ func printGraphicalNode[T any](node *Node[T], prefix string, isTail bool) {
 		printGraphicalNode(node.Right, newPrefix, false)
 	}
 
-	// Visual connectors
 	connector := "└── "
 	if !isTail {
 		connector = "┌── "
