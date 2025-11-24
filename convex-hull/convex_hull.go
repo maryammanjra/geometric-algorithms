@@ -1,22 +1,17 @@
-package main
+package convexhull
 
 import (
-	"fmt"
+	"geometric-algorithms/geometry"
 	"math"
 	"sort"
 )
 
-type Point struct {
-	x float64
-	y float64
-}
-
 // Move Stack and Point delcarations
 type Stack struct {
-	stack []Point
+	stack []geometry.Point
 }
 
-func (s *Stack) push(p Point) {
+func (s *Stack) push(p geometry.Point) {
 	s.stack = append(s.stack, p)
 }
 
@@ -24,34 +19,34 @@ func (s *Stack) isEmpty() bool {
 	return len(s.stack) == 0
 }
 
-func (s *Stack) pop() Point {
+func (s *Stack) pop() geometry.Point {
 	if !s.isEmpty() {
 		popped := s.stack[len(s.stack)-1]
 		s.stack = s.stack[:len(s.stack)-1]
 		return popped
 	}
-	return Point{-1, -1}
+	return geometry.Point{X: -1, Y: -1}
 }
 
-func (s *Stack) peek() Point {
+func (s *Stack) peek() geometry.Point {
 	if !s.isEmpty() {
 		last := s.stack[len(s.stack)-1]
 		return last
 	}
-	return Point{-1, -1}
+	return geometry.Point{X: -1, Y: -1}
 }
 
-func orientedArea(p1 Point, p2 Point, p3 Point) float64 {
-	vectorOne := Point{p2.x - p1.x, p2.y - p1.y}
-	vectorTwo := Point{p3.x - p1.x, p3.y - p1.y}
-	return (vectorOne.x * vectorTwo.y) - (vectorOne.y * vectorTwo.x)
+func orientedArea(p1 geometry.Point, p2 geometry.Point, p3 geometry.Point) float64 {
+	vectorOne := geometry.Point{X: p2.X - p1.X, Y: p2.Y - p1.Y}
+	vectorTwo := geometry.Point{X: p3.X - p1.X, Y: p3.Y - p1.Y}
+	return (vectorOne.X * vectorTwo.Y) - (vectorOne.Y * vectorTwo.X)
 }
 
 // findPolarAngle assumes p2 lies either in quadrant one or quadrant two relative to p1 as origin,
 // based on Graham's scan calculating polar angles in reference to the lowest Y-coordinate.
-func findPolarAngle(p1 Point, p2 Point) float64 {
-	xVector := p2.x - p1.x
-	yVector := p2.y - p1.y
+func findPolarAngle(p1 geometry.Point, p2 geometry.Point) float64 {
+	xVector := p2.X - p1.X
+	yVector := p2.Y - p1.Y
 
 	if xVector < 0 {
 		return math.Pi + math.Atan(yVector/xVector)
@@ -60,11 +55,11 @@ func findPolarAngle(p1 Point, p2 Point) float64 {
 	return math.Atan(yVector / xVector)
 }
 
-func findSmallestY(points []Point) Point {
+func findSmallestY(points []geometry.Point) geometry.Point {
 	minPoint := points[0]
 
 	for _, val := range points {
-		if val.y < minPoint.y {
+		if val.Y < minPoint.Y {
 			minPoint = val
 		}
 	}
@@ -72,13 +67,13 @@ func findSmallestY(points []Point) Point {
 	return minPoint
 }
 
-func sortByPolarAngle(points []Point, smallestY Point) {
+func sortByPolarAngle(points []geometry.Point, smallestY geometry.Point) {
 	sort.Slice(points, func(i, j int) bool {
 		return findPolarAngle(smallestY, points[i]) < findPolarAngle(smallestY, points[j])
 	})
 }
 
-func grahamsScan(points []Point) []Point {
+func grahamsScan(points []geometry.Point) []geometry.Point {
 	startingPoint := findSmallestY(points)
 	sortByPolarAngle(points, startingPoint)
 	stack := new(Stack)
@@ -105,9 +100,4 @@ func grahamsScan(points []Point) []Point {
 	}
 
 	return stack.stack
-}
-
-func main() {
-	pointSlice := []Point{{x: 1, y: 2}, {x: 1.5, y: 4}, {x: 2, y: 3.5}, {x: 6, y: 3}, {x: 4, y: 3.8}, {x: 5, y: 8}}
-	fmt.Println("Convex hull ", grahamsScan(pointSlice))
 }
