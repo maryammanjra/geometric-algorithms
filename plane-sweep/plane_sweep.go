@@ -1,4 +1,4 @@
-package main
+package planesweep
 
 type Point struct {
 	x float32

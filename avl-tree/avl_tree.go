@@ -111,7 +111,15 @@ func Delete[T any](node *Node[T], cmp Comparator[T], val T) *Node[T] {
 	difference := cmp(node.Value, val)
 
 	if difference == 0 {
-		return nil
+
+		if node.Left == nil && node.Right == nil {
+			return nil
+		} else if node.Left == nil {
+			return node.Right
+		} else if node.Right == nil {
+			return node.Left
+		}
+
 	}
 
 	if difference > 0 {
@@ -158,7 +166,6 @@ func rotateLeft[T any](node *Node[T]) *Node[T] {
 	return tmp
 }
 
-// PrintGraphical prints the tree in a normal top-down tree structure.
 func (t *AVLTree[T]) PrintGraphical() {
 	if t.Root == nil {
 		println("(empty)")
