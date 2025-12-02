@@ -17,9 +17,9 @@ type AVLTree[T any] struct {
 	Comparator Comparator[T]
 }
 
-func findSuccessor[T any](node *Node[T]) node *Node[T] {
+func findSuccessor[T any](node *Node[T]) *Node[T] {
 	if node == nil {
-		return nil;
+		return nil
 	}
 
 	if node.Right == nil {
@@ -32,7 +32,7 @@ func findSuccessor[T any](node *Node[T]) node *Node[T] {
 		successor = successor.Left
 	}
 
-	return &successor
+	return successor
 }
 
 func getHeight[T any](node *Node[T]) int {
