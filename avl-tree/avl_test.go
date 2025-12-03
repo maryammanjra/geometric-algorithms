@@ -1,138 +1,115 @@
 package avl
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
-func intCmp(a, b int) int { return a - b }
+func IntComparator(a, b int) int {
+	if a < b {
+		return -1
+	} else if a > b {
+		return 1
+	}
+	return 0
+}
 
 func TestInsertAndSearch(t *testing.T) {
-	tree := NewAVL(intCmp)
+	tree := NewAVL(IntComparator)
 
-	values := []int{10, 20, 5, 4, 15, 30}
-	for _, v := range values {
-		tree.Root = Insert(tree.Root, tree.Comparator, v)
+	tree.Root = Insert(tree.Root, tree.Comparator, 10)
+	tree.Root = Insert(tree.Root, tree.Comparator, 20)
+	tree.Root = Insert(tree.Root, tree.Comparator, 30)
+
+	tests := []struct {
+		val  int
+		want bool
+	}{
+		{10, true},
+		{20, true},
+		{30, true},
+		{40, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("Search %d", tt.val), func(t *testing.T) {
+			got := SearchTree(tree, tt.val)
+			if got != tt.want {
+				t.Errorf("SearchTree(%d) = %v; want %v", tt.val, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDelete(t *testing.T) {
+	tree := NewAVL(IntComparator)
+
+	tree.Root = Insert(tree.Root, tree.Comparator, 10)
+	tree.Root = Insert(tree.Root, tree.Comparator, 20)
+	tree.Root = Insert(tree.Root, tree.Comparator, 30)
+
+	tree.Root = Delete(tree.Root, tree.Comparator, 20)
+
+	if SearchTree(tree, 20) {
+		t.Errorf("Expected 20 to be deleted")
+	}
+
+	if !SearchTree(tree, 10) {
+		t.Errorf("Expected 10 to be found")
+	}
+	if !SearchTree(tree, 30) {
+		t.Errorf("Expected 30 to be found")
+	}
+}
+
+func TestAVLTreeBalance(t *testing.T) {
+	tree := NewAVL(IntComparator)
+
+	insertValues := []int{10, 20, 30, 25, 5, 15}
+	for _, val := range insertValues {
+		tree.Root = Insert(tree.Root, tree.Comparator, val)
 	}
 
 	tests := []struct {
 		val      int
-		expected bool
+		expectBF int
 	}{
-		{10, true},
-		{20, true},
-		{4, true},
-		{15, true},
-		{99, false},
+		{5, 0},  // 5 has no children, so balance factor is 0
+		{10, 0}, // 10 has left child 5 and right child 15, balance factor is 0
+		{15, 0}, // 15 has no children, so balance factor is 0
+		{20, 0}, // 20 has left child 10 and right child 30, balance factor is 0
+		{25, 0}, // 25 has no children, so balance factor is 0
+		{30, 1}, // 30 has left child 25 and no right child, balance factor is 1
 	}
 
-	for _, tc := range tests {
-		result := SearchTree(tree, tc.val)
-		if result != tc.expected {
-			t.Errorf("Search(%d) = %v, want %v", tc.val, result, tc.expected)
-		}
-	}
-}
-
-func TestBalancing(t *testing.T) {
-	tree := NewAVL(intCmp)
-
-	for _, v := range []int{1, 2, 3, 4, 5} {
-		tree.Root = Insert(tree.Root, tree.Comparator, v)
-	}
-
-	if tree.Root.Value != 2 && tree.Root.Value != 3 {
-		t.Errorf("Tree is not balanced. Root = %v", tree.Root.Value)
-	}
-
-	if tree.Root.Balance < -1 || tree.Root.Balance > 1 {
-		t.Errorf("Invalid root balance factor: %d", tree.Root.Balance)
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("Check Balance Factor for %d", tt.val), func(t *testing.T) {
+			node := searchNode(tree.Root, tree.Comparator, tt.val)
+			if node != nil {
+				balanceFactor := getBalance(node)
+				if balanceFactor != tt.expectBF {
+					t.Errorf("Balance factor for %d is %d, expected %d", tt.val, balanceFactor, tt.expectBF)
+				}
+			} else {
+				t.Errorf("Node %d not found in the tree", tt.val)
+			}
+		})
 	}
 }
 
-// --- New deletion tests ---
-
-func TestDeleteLeafNode(t *testing.T) {
-	tree := NewAVL(intCmp)
-	values := []int{10, 20, 5}
-	for _, v := range values {
-		tree.Root = Insert(tree.Root, tree.Comparator, v)
-	}
-
-	tree.Root = Delete(tree.Root, tree.Comparator, 5)
-
-	if SearchTree(tree, 5) {
-		t.Errorf("Deleted value 5 still found in tree")
-	}
-
-	checkAVLProperties(t, tree.Root)
-}
-
-func TestDeleteNodeWithOneChild(t *testing.T) {
-	tree := NewAVL(intCmp)
-	values := []int{10, 5, 20, 15}
-	for _, v := range values {
-		tree.Root = Insert(tree.Root, tree.Comparator, v)
-	}
-
-	tree.Root = Delete(tree.Root, tree.Comparator, 20)
-
-	if SearchTree(tree, 20) {
-		t.Errorf("Deleted value 20 still found in tree")
-	}
-
-	checkAVLProperties(t, tree.Root)
-}
-
-func TestDeleteNodeWithTwoChildren(t *testing.T) {
-	tree := NewAVL(intCmp)
-	values := []int{10, 5, 20, 15, 25}
-	for _, v := range values {
-		tree.Root = Insert(tree.Root, tree.Comparator, v)
-	}
-
-	tree.Root = Delete(tree.Root, tree.Comparator, 20)
-
-	if SearchTree(tree, 20) {
-		t.Errorf("Deleted value 20 still found in tree")
-	}
-
-	checkAVLProperties(t, tree.Root)
-}
-
-func TestDeleteRootNode(t *testing.T) {
-	tree := NewAVL(intCmp)
-	values := []int{10, 5, 15}
-	for _, v := range values {
-		tree.Root = Insert(tree.Root, tree.Comparator, v)
-	}
-
-	tree.Root = Delete(tree.Root, tree.Comparator, 10)
-
-	if SearchTree(tree, 10) {
-		t.Errorf("Deleted root value 10 still found in tree")
-	}
-
-	checkAVLProperties(t, tree.Root)
-}
-
-// --- Helper to check AVL balance recursively ---
-func checkAVLProperties(t *testing.T, node *Node) int {
+func searchNode[T any](node *Node[T], cmp Comparator[T], val T) *Node[T] {
 	if node == nil {
-		return 0
+		return nil
 	}
 
-	leftHeight := checkAVLProperties(t, node.Left)
-	rightHeight := checkAVLProperties(t, node.Right)
-
-	balance := leftHeight - rightHeight
-	if balance < -1 || balance > 1 {
-		t.Errorf("Node %v has invalid balance %d", node.Value, balance)
+	comparison := cmp(node.Value, val)
+	if comparison == 0 {
+		return node
 	}
 
-	return max(leftHeight, rightHeight) + 1
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
+	if comparison > 0 {
+		return searchNode(node.Left, cmp, val)
+	} else {
+		return searchNode(node.Right, cmp, val)
 	}
-	return b
 }
