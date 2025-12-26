@@ -1,6 +1,7 @@
 package planesweep
 
 import (
+	"fmt"
 	"geometric-algorithms/avl-tree"
 	"geometric-algorithms/geometry"
 )
@@ -48,4 +49,11 @@ func planeSweep(lines []geometry.Segment) {
 	}
 
 	segmentTree.PrintGraphical()
+
+	for !segmentTree.IsEmpty() {
+		fmt.Println(segmentTree.FindLargest().Value)
+		segmentTree.Root = avl.Delete(segmentTree.Root, segmentTree.Comparator, segmentTree.FindLargest().Value)
+		segmentTree.PrintGraphical()
+	}
+
 }

@@ -194,6 +194,10 @@ func (t *AVLTree[T]) PrintGraphical() {
 	printGraphicalNode(t.Root, "", true)
 }
 
+func (t *AVLTree[T]) IsEmpty() bool {
+	return t.Root == nil
+}
+
 func printGraphicalNode[T any](node *Node[T], prefix string, isTail bool) {
 	if node.Right != nil {
 		newPrefix := prefix
@@ -221,4 +225,19 @@ func printGraphicalNode[T any](node *Node[T], prefix string, isTail bool) {
 		}
 		printGraphicalNode(node.Left, newPrefix, true)
 	}
+}
+
+func (t *AVLTree[T]) FindLargest() *Node[T] {
+
+	if t.Root == nil {
+		return nil
+	}
+
+	curr := t.Root
+
+	for curr.Right != nil {
+		curr = curr.Right
+	}
+
+	return curr
 }
