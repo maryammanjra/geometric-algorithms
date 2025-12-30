@@ -241,3 +241,106 @@ func (t *AVLTree[T]) FindLargest() *Node[T] {
 
 	return curr
 }
+
+func (t *AVLTree[T]) FindSmallest() *Node[T] {
+
+	if t.Root == nil {
+		return nil
+	}
+
+	curr := t.Root
+
+	for curr.Left != nil {
+		curr = curr.Left
+	}
+
+	return curr
+}
+
+func (t *AVLTree[T]) FindLargerNeighbour(val T) *Node[T] {
+
+	if t.Root == nil {
+		return nil
+	}
+
+	currNode := t.Root
+	var matchNode *Node[T]
+
+	for currNode.Left != nil || currNode.Right != nil {
+		if currNode.Right != nil {
+
+			if t.Comparator(currNode.Right.Value, val) == 0 {
+				matchNode = currNode.Right
+				break
+			}
+
+			if t.Comparator(currNode.Right.Value, val) < 0 {
+				currNode = currNode.Right
+			}
+		}
+
+		if currNode.Left != nil {
+
+			if t.Comparator(currNode.Left.Value, val) == 0 {
+				matchNode = currNode.Left
+				break
+			}
+
+			if t.Comparator(currNode.Left.Value, val) > 0 {
+				currNode = currNode.Left
+			}
+		}
+	}
+
+	if matchNode.Right != nil {
+		return matchNode.Right
+	} else if t.Comparator(currNode.Value, matchNode.Value) > 0 {
+		return currNode
+	}
+
+	return nil
+}
+
+func (t *AVLTree[T]) FindSmallerNeighbour(val T) *Node[T] {
+
+	if t.Root == nil {
+		return nil
+	}
+
+	currNode := t.Root
+	var matchNode *Node[T]
+
+	for currNode.Left != nil || currNode.Right != nil {
+		if currNode.Right != nil {
+
+			if t.Comparator(currNode.Right.Value, val) == 0 {
+				matchNode = currNode.Right
+				break
+			}
+
+			if t.Comparator(currNode.Right.Value, val) < 0 {
+				currNode = currNode.Right
+			}
+		}
+
+		if currNode.Left != nil {
+
+			if t.Comparator(currNode.Left.Value, val) == 0 {
+				matchNode = currNode.Left
+				break
+			}
+
+			if t.Comparator(currNode.Left.Value, val) > 0 {
+				currNode = currNode.Left
+			}
+		}
+	}
+
+	if matchNode.Left != nil {
+		return matchNode.Left
+	} else if t.Comparator(currNode.Value, matchNode.Value) < 0 {
+		return currNode
+	}
+
+	return nil
+}
