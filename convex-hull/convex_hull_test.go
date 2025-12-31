@@ -1,10 +1,9 @@
 package convexhull
 
 import (
+	"geometric-algorithms/geometry"
 	"reflect"
 	"testing"
-
-	"geometric-algorithms/geometry"
 )
 
 func pointInSlice(p geometry.Point, pts []geometry.Point) bool {

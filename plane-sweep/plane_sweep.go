@@ -11,6 +11,38 @@ type Event struct {
 	side     int // 0 for left endpoint, 1 for intersection, 2 for right
 }
 
+type Sweep struct {
+	X      float64
+	Status *avl.AVLTree[geometry.Segment]
+}
+
+func NewSweep() *Sweep {
+	sweep := &Sweep{}
+
+	cmp := func(a, b geometry.Segment) int {
+		y1 := yAtX(a, sweep.X)
+		y2 := yAtX(b, sweep.X)
+
+		if y1 < y2 {
+			return -1
+		}
+		if y1 > y2 {
+			return 1
+		}
+
+		if a.ID < b.ID {
+			return -1
+		}
+		if a.ID > b.ID {
+			return 1
+		}
+		return 0
+	}
+
+	sweep.Status = avl.NewAVL[geometry.Segment](cmp)
+	return sweep
+}
+
 func compareEvents(e1 Event, e2 Event) int {
 
 	if e1.endpoint.X > e2.endpoint.X {
@@ -20,10 +52,10 @@ func compareEvents(e1 Event, e2 Event) int {
 		return -1
 	}
 
-	if e1.endpoint.Y < e2.endpoint.Y {
+	if e1.endpoint.Y > e2.endpoint.Y {
 		return 1
 	}
-	if e1.endpoint.Y > e2.endpoint.Y {
+	if e1.endpoint.Y < e2.endpoint.Y {
 		return -1
 	}
 
@@ -37,30 +69,16 @@ func compareEvents(e1 Event, e2 Event) int {
 	return 0
 }
 
-/*
-For the purpose of comparing segments along the sweep-line for above and below other segments i.e
-one segment is above another segment -- consider adding the cases for when the line ends
-may or may not be needed based on how events are processed
-*/
-func compareSegments(s1 geometry.Segment, s2 geometry.Segment) int {
+func yAtX(s geometry.Segment, x float64) float64 {
 
-	if s1.LeftEndpoint.Y > s2.LeftEndpoint.Y {
-		return 1
+	dx := s.RightEndpoint.X - s.LeftEndpoint.X
+
+	if dx == 0 {
+		return s.LeftEndpoint.Y
 	}
 
-	if s1.LeftEndpoint.Y < s2.LeftEndpoint.Y {
-		return -1
-	}
-
-	if s1.RightEndpoint.Y > s2.RightEndpoint.Y {
-		return 1
-	}
-
-	if s1.RightEndpoint.Y < s2.RightEndpoint.Y {
-		return -1
-	}
-
-	return 0
+	t := (x - s.LeftEndpoint.X) / dx
+	return s.LeftEndpoint.Y + t*(s.RightEndpoint.Y-s.LeftEndpoint.Y)
 }
 
 func checkForIntersection(s1 geometry.Segment, s2 geometry.Segment) bool {
@@ -74,7 +92,7 @@ func findIntersection(s1 geometry.Segment, s2 geometry.Segment) geometry.Point {
 func planeSweep(lines []geometry.Segment) {
 
 	segmentTree := avl.NewAVL(compareEvents)
-	statusTree := avl.NewAVL(compareSegments)
+	statusTree := NewSweep()
 
 	for _, segment := range lines {
 		leftEndpointEvent := Event{endpoint: segment.LeftEndpoint, segment: segment, side: 0}
@@ -83,6 +101,7 @@ func planeSweep(lines []geometry.Segment) {
 		segmentTree.Root = avl.Insert(segmentTree.Root, segmentTree.Comparator, rightEndpointEvent)
 	}
 
+	statusTree.X = segmentTree.FindSmallest().Value.endpoint.X
 	segmentTree.PrintGraphical()
 
 	for !segmentTree.IsEmpty() {
@@ -90,11 +109,10 @@ func planeSweep(lines []geometry.Segment) {
 		segmentTree.Root = avl.Delete(segmentTree.Root, segmentTree.Comparator, currMin)
 
 		if currMin.side == 0 {
-			statusTree.Root = avl.Insert(statusTree.Root, statusTree.Comparator, currMin.segment)
+			statusTree.Status.Root = avl.Insert(statusTree.Status.Root, statusTree.Status.Comparator, currMin.segment)
 		}
 
 		segmentTree.PrintGraphical()
-		statusTree.PrintGraphical()
 	}
 
 }
