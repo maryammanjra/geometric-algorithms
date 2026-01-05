@@ -81,8 +81,23 @@ func yAtX(s geometry.Segment, x float64) float64 {
 	return s.LeftEndpoint.Y + t*(s.RightEndpoint.Y-s.LeftEndpoint.Y)
 }
 
-func checkForIntersection(s1 geometry.Segment, s2 geometry.Segment) bool {
-	return false
+func orientation(p, q, r geometry.Point) int {
+	val := (q.Y-p.Y)*(r.X-q.X) - (q.X-p.X)*(r.Y-q.Y)
+
+	if val > 0 {
+		return 1
+	}
+	return 2
+}
+
+func checkForIntersection(s1, s2 geometry.Segment) bool {
+	p1 := s1.LeftEndpoint
+	q1 := s1.RightEndpoint
+	p2 := s2.LeftEndpoint
+	q2 := s2.RightEndpoint
+
+	return orientation(p1, q1, p2) != orientation(p1, q1, q2) &&
+		orientation(p2, q2, p1) != orientation(p2, q2, q1)
 }
 
 func findIntersection(s1 geometry.Segment, s2 geometry.Segment) geometry.Point {
@@ -105,11 +120,34 @@ func planeSweep(lines []geometry.Segment) {
 	segmentTree.PrintGraphical()
 
 	for !segmentTree.IsEmpty() {
+		
 		currMin := segmentTree.FindSmallest().Value
 		segmentTree.Root = avl.Delete(segmentTree.Root, segmentTree.Comparator, currMin)
 
+		// First endpoint of a segment, check if it will eventually intersect its neighbours, if so insert into the 
+		//event queue 
 		if currMin.side == 0 {
 			statusTree.Status.Root = avl.Insert(statusTree.Status.Root, statusTree.Status.Comparator, currMin.segment)
+			aboveSegment := statusTree.Status.FindLargerNeighbour(currMin.segment).Value
+			belowSegment := statusTree.Status.FindSmallerNeighbour(currMin.segment).Value
+
+			if checkForIntersection(aboveSegment, currMin.segment){
+				intersectionPointAbove := findIntersection(aboveSegment, currMin.segment)
+				intersectionAboveEvent := Event{endpoint: intersectionPointAbove, segment: currMin.segment, side: 1}
+				segmentTree.Root = avl.Insert(segmentTree.Root, segmentTree.Comparator, intersectionAboveEvent)
+			}
+
+			if checkForIntersection(belowSegment, currMin.segment) {
+				intersectionPointBelow := findIntersection(aboveSegment, currMin.segment)
+				intersectionBelowEvent := Event{endpoint: intersectionPointBelow, segment: currMin.segment, side: 1}
+				segmentTree.Root = avl.Insert(segmentTree.Root, segmentTree.Comparator, intersectionBelowEvent)
+			}	
+		}
+
+		// Intersection point of a segment, check which segments it intersects out of its neighbours, then change the ordering
+		// in the status tree 
+		else if currMin.side == 1 {
+			
 		}
 
 		segmentTree.PrintGraphical()

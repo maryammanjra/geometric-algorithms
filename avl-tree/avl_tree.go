@@ -138,7 +138,7 @@ func Delete[T any](node *Node[T], cmp Comparator[T], val T) *Node[T] {
 			return node.Left
 		} else {
 			node.Value = findSuccessor(node).Value
-			Delete(node.Right, cmp, node.Value)
+			node.Right = Delete(node.Right, cmp, node.Value)
 		}
 	}
 
