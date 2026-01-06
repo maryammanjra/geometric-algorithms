@@ -7,7 +7,7 @@ import (
 
 type Event struct {
 	endpoint geometry.Point
-	segment  geometry.Segment
+	segment  []geometry.Segment
 	side     int // 0 for left endpoint, 1 for intersection, 2 for right
 }
 
@@ -110,8 +110,8 @@ func planeSweep(lines []geometry.Segment) {
 	statusTree := NewSweep()
 
 	for _, segment := range lines {
-		leftEndpointEvent := Event{endpoint: segment.LeftEndpoint, segment: segment, side: 0}
-		rightEndpointEvent := Event{endpoint: segment.RightEndpoint, segment: segment, side: 2}
+		leftEndpointEvent := Event{endpoint: segment.LeftEndpoint, segment: []geometry.Segment{segment}, side: 0}
+		rightEndpointEvent := Event{endpoint: segment.RightEndpoint, segment: []geometry.Segment{segment}, side: 2}
 		segmentTree.Root = avl.Insert(segmentTree.Root, segmentTree.Comparator, leftEndpointEvent)
 		segmentTree.Root = avl.Insert(segmentTree.Root, segmentTree.Comparator, rightEndpointEvent)
 	}
@@ -120,34 +120,35 @@ func planeSweep(lines []geometry.Segment) {
 	segmentTree.PrintGraphical()
 
 	for !segmentTree.IsEmpty() {
-		
+
 		currMin := segmentTree.FindSmallest().Value
 		segmentTree.Root = avl.Delete(segmentTree.Root, segmentTree.Comparator, currMin)
 
-		// First endpoint of a segment, check if it will eventually intersect its neighbours, if so insert into the 
-		//event queue 
-		if currMin.side == 0 {
-			statusTree.Status.Root = avl.Insert(statusTree.Status.Root, statusTree.Status.Comparator, currMin.segment)
-			aboveSegment := statusTree.Status.FindLargerNeighbour(currMin.segment).Value
-			belowSegment := statusTree.Status.FindSmallerNeighbour(currMin.segment).Value
+		//Update status tree X coordinate
+		// statusTree.X = currMin.segment[0].LeftEndpoint.X
 
-			if checkForIntersection(aboveSegment, currMin.segment){
-				intersectionPointAbove := findIntersection(aboveSegment, currMin.segment)
-				intersectionAboveEvent := Event{endpoint: intersectionPointAbove, segment: currMin.segment, side: 1}
+		// First endpoint of a segment, check if it will eventually intersect its neighbours, if so insert into the
+		// event queue
+
+		// Keep the segment that's above in position 0 of the slice, to make processing the endpoint easier
+		if currMin.side == 0 {
+			statusTree.Status.Root = avl.Insert(statusTree.Status.Root, statusTree.Status.Comparator, currMin.segment[0])
+			aboveSegment := statusTree.Status.FindLargerNeighbour(currMin.segment[0]).Value
+			belowSegment := statusTree.Status.FindSmallerNeighbour(currMin.segment[0]).Value
+
+			if checkForIntersection(aboveSegment, currMin.segment[0]) {
+				intersectionPointAbove := findIntersection(aboveSegment, currMin.segment[0])
+				intersectionAboveEvent := Event{endpoint: intersectionPointAbove, segment: []geometry.Segment{aboveSegment, currMin.segment[0]}, side: 1}
 				segmentTree.Root = avl.Insert(segmentTree.Root, segmentTree.Comparator, intersectionAboveEvent)
 			}
 
-			if checkForIntersection(belowSegment, currMin.segment) {
-				intersectionPointBelow := findIntersection(aboveSegment, currMin.segment)
-				intersectionBelowEvent := Event{endpoint: intersectionPointBelow, segment: currMin.segment, side: 1}
+			if checkForIntersection(belowSegment, currMin.segment[0]) {
+				intersectionPointBelow := findIntersection(aboveSegment, currMin.segment[0])
+				intersectionBelowEvent := Event{endpoint: intersectionPointBelow, segment: []geometry.Segment{currMin.segment[0], belowSegment}, side: 1}
 				segmentTree.Root = avl.Insert(segmentTree.Root, segmentTree.Comparator, intersectionBelowEvent)
-			}	
-		}
-
-		// Intersection point of a segment, check which segments it intersects out of its neighbours, then change the ordering
-		// in the status tree 
-		else if currMin.side == 1 {
-			
+			}
+		} else if currMin.side == 1 {
+			statusTree.Status.Root = avl.Delete(statusTree.Status.Root, statusTree.Status.Comparator, currMin.side)
 		}
 
 		segmentTree.PrintGraphical()
