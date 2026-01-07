@@ -148,7 +148,7 @@ func planeSweep(lines []geometry.Segment) {
 				segmentTree.Root = avl.Insert(segmentTree.Root, segmentTree.Comparator, intersectionBelowEvent)
 			}
 		} else if currMin.side == 1 {
-			statusTree.Status.Root = avl.Delete(statusTree.Status.Root, statusTree.Status.Comparator, currMin.side)
+			
 		}
 
 		segmentTree.PrintGraphical()
